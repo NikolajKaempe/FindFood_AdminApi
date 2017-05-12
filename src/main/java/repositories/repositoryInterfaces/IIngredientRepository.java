@@ -10,7 +10,9 @@ import java.util.Collection;
  */
 public interface IIngredientRepository extends IRepository<Ingredient>
 {
-
+    int create(Ingredient model);
+    boolean update(Ingredient model);
+    void failIfInvalid(Ingredient model);
     Collection<Allergy> getAllergiesFor(int id);
     void failDeleteIfRelationsExist(int id);
     boolean isRelationValid(int id);

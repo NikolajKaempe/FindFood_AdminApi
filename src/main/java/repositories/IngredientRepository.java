@@ -8,6 +8,7 @@ import repositories.repositoryInterfaces.IIngredientRepository;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 
 public class IngredientRepository implements IIngredientRepository
 {
@@ -21,13 +22,12 @@ public class IngredientRepository implements IIngredientRepository
     public Collection<Ingredient> getAll() {
         Collection<Ingredient> ingredients;
         String sql =
-                "SELECT ingredientId, ingredientName, ingredientDescription " +
+                "SELECT ingredientId, ingredientName, ingredientDescription, published " +
                     "FROM Ingredients";
         try{
             Connection con = sql2o.open();
             ingredients = con.createQuery(sql)
                     .executeAndFetch(Ingredient.class);
-           //ingredients.forEach(ingredient -> ingredient.setAllergies(this.getAllergiesFor(ingredient.getIngredientId())));
         }catch (Exception e)
         {
             e.printStackTrace();
@@ -43,7 +43,7 @@ public class IngredientRepository implements IIngredientRepository
         }
         Ingredient ingredient;
         String sql =
-                "SELECT ingredientId, ingredientName, ingredientDescription " +
+                "SELECT ingredientId, ingredientName, ingredientDescription, published " +
                         "FROM Ingredients " +
                         "WHERE ingredientId = :id";
         try{
@@ -64,9 +64,11 @@ public class IngredientRepository implements IIngredientRepository
     public int create(Ingredient model) {
         int id;
         failIfInvalid(model);
+        model.setPublished(true);
+        Date date = new Date();
         String sql =
-                "INSERT INTO Ingredients (ingredientName, ingredientDescription) " +
-                        "VALUES (:ingredientName, :ingredientDescription)";
+                "INSERT INTO Ingredients (ingredientName, ingredientDescription, published, createdDate) " +
+                        "VALUES (:ingredientName, :ingredientDescription, :published, :date)";
         String sqlRelations =
                 "INSERT INTO IngredientAllergies (allergyId, ingredientId) " +
                         "VALUES (:allergyId, :id )";
@@ -74,6 +76,7 @@ public class IngredientRepository implements IIngredientRepository
             Connection con = sql2o.beginTransaction();
             id = Integer.parseInt(con.createQuery(sql, true)
                     .bind(model)
+                    .addParameter("date",date.getTime())
                     .executeUpdate().getKey().toString());
             model.getAllergies().forEach(allergy ->
                     con.createQuery(sqlRelations)
@@ -97,11 +100,12 @@ public class IngredientRepository implements IIngredientRepository
             throw new IllegalArgumentException("No ingredient found with id: " + model.getIngredientId());
         }
         failIfInvalid(model);
-
+        Date date = new Date();
         String sql =
                 "UPDATE Ingredients SET " +
                         "ingredientName = :ingredientName, " +
-                        "ingredientDescription = :ingredientDescription " +
+                        "ingredientDescription = :ingredientDescription, " +
+                        "createdDate = :date " +
                         "WHERE ingredientId = :ingredientId";
         String sqlRelationsToDelete =
                 "DELETE FROM IngredientAllergies WHERE " +
@@ -113,6 +117,7 @@ public class IngredientRepository implements IIngredientRepository
             Connection con = sql2o.beginTransaction();
             con.createQuery(sql)
                     .bind(model)
+                    .addParameter("date",date.getTime())
                     .executeUpdate();
             con.createQuery(sqlRelationsToDelete)
                     .addParameter("id",model.getIngredientId())
@@ -208,6 +213,47 @@ public class IngredientRepository implements IIngredientRepository
             if (!this.isRelationValid(allergy.getAllergyId())){
                 throw new IllegalArgumentException("allergy with id " + allergy.getAllergyId() + " dos'ent exist");
             }
+        }
+    }
+
+    @Override
+    public boolean isPublished(int id) {
+        Integer result;
+        String sql = "SELECT ingredientId " +
+                "FROM Ingredients " +
+                "WHERE published = 1 " +
+                "AND ingredientId = :id";
+        try{
+            Connection con = sql2o.open();
+            result = con.createQuery(sql)
+                    .addParameter("id",id)
+                    .executeAndFetchFirst(Integer.class);
+            if (result != 0) return true;
+            return false;
+        }catch (Exception e)
+        {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean publish(int id) {
+        Date date = new Date();
+        String sql =
+                "UPDATE Ingredients SET " +
+                        "published = 1, " +
+                        "createdDate = :date " +
+                        "WHERE ingredientId = :ingredientId";
+        try{
+            Connection con = sql2o.open();
+            con.createQuery(sql)
+                    .addParameter("ingredientId",id)
+                    .addParameter("date",date.getTime())
+                    .executeUpdate();
+            return true;
+        }catch (Exception e)
+        {
+            return false;
         }
     }
 

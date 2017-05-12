@@ -76,58 +76,7 @@ public class RecipeController
             return new String("No allergies found for recipe with id "+ id);
         }, json());
 
-        post("/recipes", (req, res) -> {
-            Recipe recipe;
-            try{
-                recipe = fromJson(req.body(),Recipe.class);
-            }catch (Exception e)
-            {
-                res.status(400);
-                return new String("Invalid Request Body ");
-            }
-
-            int id = recipeRepository.create(recipe);
-
-            if (id != 0)
-            {
-                res.status(200);
-                return id;
-            }
-            res.status(400);
-            return new String("Recipe not created");
-        }, json());
-
-        put("/recipes/:id", (req, res) -> {
-            int id ;
-            Recipe recipe;
-            try{
-                id = Integer.parseInt(req.params(":id"));
-            }catch (Exception e)
-            {
-                res.status(400);
-                return new String("the id must be an integer");
-            }
-            try {
-                recipe = fromJson(req.body(), Recipe.class);
-            }catch (Exception e)
-            {
-                res.status(400);
-                return new String("Invalid Request Body ");
-            }
-
-            recipe.setRecipeId(id);
-            boolean result = recipeRepository.update(recipe);
-
-            if (result)
-            {
-                res.status(200);
-                return new String("Recipe " + id + " Updated");
-            }
-            res.status(400);
-            return new String("Recipe not updated");
-        }, json());
-
-        delete("/recipes/:id", (req, res) -> {
+        put("/recipes/accept/:id", (req, res) -> {
             int id ;
             try{
                 id = Integer.parseInt(req.params(":id"));
@@ -136,27 +85,26 @@ public class RecipeController
                 res.status(400);
                 return new String("the id must be an integer");
             }
-            boolean result = recipeRepository.delete(id);
+            if (!recipeRepository.exists(id))
+            {
+                return new String("no ingredient with id " + id + " found");
+            }
+            if (recipeRepository.isPublished(id))
+            {
+                return new String("ingredient with id " + id + " already published");
+            }
+
+            boolean result = recipeRepository.publish(id);
+
             if (result)
             {
                 res.status(200);
-                return result;
+                return new String("recipe " + id + " published");
             }
-            res.status(500);
-            return new String("Could not delete Recipe with id " + id);
-        },json());
 
-        before((req,res) -> {
-            //TODO GET VERIFICATION FOR ADMIN/PUBLISHER
-            res.header("MyVal", "Hello World"); // Dummy -> REMOVE
-        });
-
-        after((req, res) -> res.type("application/json"));
-
-        exception(IllegalArgumentException.class, (e, req, res) -> {
             res.status(400);
-            res.body(toJson(e.getMessage()));
-            res.type("application/json");
-        });
+            return new String("recipe not published");
+        }, json());
+
     }
 }

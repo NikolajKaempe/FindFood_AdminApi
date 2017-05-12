@@ -8,6 +8,7 @@ public class Allergy
     private int allergyId;
     private String allergyName;
     private String allergyDescription;
+    private boolean published;
 
     public Allergy(){
 
@@ -45,5 +46,13 @@ public class Allergy
 
     public void setAllergyDescription(String allergyDescription) {
         this.allergyDescription = allergyDescription;
+    }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public void setPublished(boolean published) {
+        this.published = published;
     }
 }

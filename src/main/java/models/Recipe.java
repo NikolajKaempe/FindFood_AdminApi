@@ -12,6 +12,7 @@ public class Recipe {
     private String recipeDescription;
     private String recipeImageFilePath;
     private RecipeType recipeType;
+    private boolean published;
     private Collection<MeasuredIngredient> measuredIngredients;
 
     public Recipe(){}
@@ -82,5 +83,13 @@ public class Recipe {
 
     public void setMeasuredIngredients(Collection<MeasuredIngredient> measuredIngredients) {
         this.measuredIngredients = measuredIngredients;
+    }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public void setPublished(boolean published) {
+        this.published = published;
     }
 }

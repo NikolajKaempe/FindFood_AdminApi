@@ -7,6 +7,7 @@ public class MealType
 {
     private int mealTypeId;
     private String mealTypeName;
+    private boolean published;
 
     public MealType(){
 
@@ -36,5 +37,13 @@ public class MealType
 
     public void setMealTypeName(String mealTypeName) {
         this.mealTypeName = mealTypeName;
+    }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public void setPublished(boolean published) {
+        this.published = published;
     }
 }

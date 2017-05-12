@@ -1,6 +1,7 @@
 package repositories.repositoryInterfaces;
 
 import models.Allergy;
+import models.Ingredient;
 
 import java.util.List;
 
@@ -9,6 +10,8 @@ import java.util.List;
  */
 public interface IAllergyRepository extends IRepository<Allergy>
 {
-
+    int create(Allergy model);
+    boolean update(Allergy model);
+    void failIfInvalid(Allergy model);
     void failDeleteIfRelationsExist(int id);
 }

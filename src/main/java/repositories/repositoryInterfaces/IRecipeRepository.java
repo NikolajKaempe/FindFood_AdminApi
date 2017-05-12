@@ -14,6 +14,4 @@ public interface IRecipeRepository extends IRepository<Recipe>
     Ingredient getIngredientFor(int id);
     Collection<Allergy> getAllergiesFor(int id);
     void failDeleteIfRelationsExist(int id);
-    boolean isIngredientValid(int id);
-    boolean isRecipeTypeValid(int recipeTypeId);
 }

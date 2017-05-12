@@ -75,18 +75,34 @@ public class MenuController
             return new String("No recipes found for menu with id "+ id);
         }, json());
 
+        put("/menus/accept/:id", (req, res) -> {
+            int id ;
+            try{
+                id = Integer.parseInt(req.params(":id"));
+            }catch (Exception e)
+            {
+                res.status(400);
+                return new String("the id must be an integer");
+            }
+            if (!menuRepository.exists(id))
+            {
+                return new String("no menu with id " + id + " found");
+            }
+            if (menuRepository.isPublished(id))
+            {
+                return new String("menu with id " + id + " already published");
+            }
 
-        before((req,res) -> {
-            //TODO GET VERIFICATION FOR ADMIN/PUBLISHER
-            res.header("MyVal", "" +new Date().getDate()); // Dummy -> REMOVE
-        });
+            boolean result = menuRepository.publish(id);
 
-        after((req, res) -> res.type("application/json"));
+            if (result)
+            {
+                res.status(200);
+                return new String("menu " + id + " published");
+            }
 
-        exception(IllegalArgumentException.class, (e, req, res) -> {
             res.status(400);
-            res.body(toJson(e.getMessage()));
-            res.type("application/json");
-        });
+            return new String("menu not published");
+        }, json());
     }
 }

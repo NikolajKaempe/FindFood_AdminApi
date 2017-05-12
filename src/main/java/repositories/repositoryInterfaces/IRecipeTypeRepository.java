@@ -7,5 +7,8 @@ import models.RecipeType;
  */
 public interface IRecipeTypeRepository extends IRepository<RecipeType>
 {
+    int create(RecipeType model);
+    boolean update(RecipeType model);
+    void failIfInvalid(RecipeType model);
     void failDeleteIfRelationsExist(int id);
 }

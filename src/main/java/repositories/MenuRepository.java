@@ -7,7 +7,7 @@ import repositories.repositoryInterfaces.IMenuRepository;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Date;
 
 /**
  * Created by Kaempe on 28-03-2017.
@@ -24,7 +24,7 @@ public class MenuRepository implements IMenuRepository{
     public Collection<Menu> getAll() {
         Collection<Menu> menus;
         String sql =
-                "SELECT menuId, menuName, menuDescription, menuImageFilePath " +
+                "SELECT menuId, menuName, menuDescription, menuImageFilePath, published " +
                         "FROM Menus";
         try{
             Connection con = sql2o.open();
@@ -47,7 +47,7 @@ public class MenuRepository implements IMenuRepository{
         }
         Menu menu;
         String sql =
-                "SELECT menuId, menuName, menuDescription, menuImageFilePath " +
+                "SELECT menuId, menuName, menuDescription, menuImageFilePath, published " +
                         "FROM Menus WHERE menuId = :id";
         try{
             Connection con = sql2o.open();
@@ -62,87 +62,6 @@ public class MenuRepository implements IMenuRepository{
             return null;
         }
         return menu;
-    }
-
-    @Override
-    public int create(Menu model) {
-        int id;
-        this.failIfInvalid(model);
-        Collection<Integer> ingredientRelations = new HashSet<>();
-        Collection<Integer> allergyRelations = new HashSet<>();
-        String sql =
-                "INSERT INTO Menus (menuName, menuDescription, menuImageFilePath, mealTypeId) " +
-                        "VALUES (:menuName, :menuDescription, :menuImageFilePath, :mealTypeId)";
-
-        String sqlRecipeRelations =
-                "Insert INTO MenuRecipes (recipeId, menuId) " +
-                        "VALUES (:recipeId, :menuId)";
-
-        String sqlGetIngredientRelations =
-                "SELECT ingredientId FROM MeasuredIngredients " +
-                        "WHERE recipeId = :recipeId";
-
-        String sqlIngredientRelationsToUpdate =
-                "INSERT INTO MenuIngredients (ingredientId, menuId) " +
-                        "VALUES (:ingredientId, :menuId)";
-
-        String sqlGetAllergyRelations =
-                "SELECT allergyId FROM RecipeAllergies " +
-                        "WHERE recipeId = :recipeId";
-
-        String sqlAllergyRelationsToUpdate =
-                "INSERT INTO MenuAllergies (allergyId, menuId) " +
-                        "VALUES (:allergyId, :menuId)";
-
-
-        try{
-            Connection con = sql2o.beginTransaction();
-            id = Integer.parseInt(con.createQuery(sql, true)
-                    .bind(model)
-                    .addParameter("mealTypeId",model.getMealType().getMealTypeId())
-                    .executeUpdate().getKey().toString());
-            model.getRecipes().forEach(recipe ->
-                    con.createQuery(sqlRecipeRelations)
-                            .addParameter("recipeId",recipe.getRecipeId())
-                            .addParameter("menuId",id)
-                            .executeUpdate());
-            for (Recipe recipe : model.getRecipes()) {
-                ingredientRelations.addAll(
-                    con.createQuery(sqlGetIngredientRelations)
-                        .addParameter("recipeId",recipe.getRecipeId())
-                        .executeAndFetch(Integer.class)
-                );
-                allergyRelations.addAll(
-                    con.createQuery(sqlGetAllergyRelations)
-                        .addParameter("recipeId",recipe.getRecipeId())
-                        .executeAndFetch(Integer.class)
-                );
-            }
-            for(Integer ingredientId : ingredientRelations){
-                con.createQuery(sqlIngredientRelationsToUpdate)
-                        .addParameter("ingredientId",ingredientId)
-                        .addParameter("menuId",id)
-                        .executeUpdate();
-            }
-            for(Integer allergyId : allergyRelations){
-                con.createQuery(sqlIngredientRelationsToUpdate)
-                        .addParameter("allergyId",allergyId)
-                        .addParameter("menuId",id)
-                        .executeUpdate();
-            }
-            con.commit();
-        }catch (Exception e)
-        {
-            e.printStackTrace();
-            return 0;
-        }
-
-        return id;
-    }
-
-    @Override
-    public boolean update(Menu model) {
-        return false;
     }
 
     @Override
@@ -172,34 +91,43 @@ public class MenuRepository implements IMenuRepository{
     }
 
     @Override
-    public void failIfInvalid(Menu menu){
-        if ( menu == null)
+    public boolean isPublished(int id) {
+        Integer result;
+        String sql = "SELECT menuId " +
+                "FROM Menus " +
+                "WHERE published = 1 " +
+                "AND menuId = :id";
+        try{
+            Connection con = sql2o.open();
+            result = con.createQuery(sql)
+                    .addParameter("id",id)
+                    .executeAndFetchFirst(Integer.class);
+            if (result != 0) return true;
+            return false;
+        }catch (Exception e)
         {
-            throw new IllegalArgumentException("Menu cannot be null");
+            return false;
         }
-        if (menu.getMenuName() == null || menu.getMenuName().length() < 1) {
-            throw new IllegalArgumentException("Parameter `name` cannot be empty");
-        }
-        if (menu.getMenuDescription() == null || menu.getMenuDescription().length() < 1) {
-            throw new IllegalArgumentException("Parameter `description` cannot be empty");
-        }
-        if (menu.getMealType() == null ) {
-            throw new IllegalArgumentException("Parameter `mealType` cannot be null");
-        }
-        if (menu.getMealType().getMealTypeId() == 0) {
-            throw new IllegalArgumentException("Parameter `mealType` has wrong id");
-        }
-        if (menu.getRecipes() == null){
-            throw new IllegalArgumentException("Menu must contain Recipes");
-        }
-        if (menu.getRecipes().size() == 0){
-            throw new IllegalArgumentException("Menu must contain at least 1 Recipe");
-        }
-        for (Recipe recipe : menu.getRecipes()){
-            if (!this.isRelationValid(recipe.getRecipeId())){
-                throw new IllegalArgumentException("Recipe with id " +
-                        recipe.getRecipeId() + " dos'ent exist");
-            }
+    }
+
+    @Override
+    public boolean publish(int id) {
+        Date date = new Date();
+        String sql =
+                "UPDATE Menus SET " +
+                        "published = 1, " +
+                        "createdDate = :date " +
+                        "WHERE menuId = :menuId";
+        try{
+            Connection con = sql2o.open();
+            con.createQuery(sql)
+                    .addParameter("date",date.getTime())
+                    .addParameter("menuId",id)
+                    .executeUpdate();
+            return true;
+        }catch (Exception e)
+        {
+            return false;
         }
     }
 
@@ -207,7 +135,7 @@ public class MenuRepository implements IMenuRepository{
     public MealType getMealTypeFor(int id){
         MealType mealType;
         String sql =
-                "SELECT mealTypeId, mealTypeName " +
+                "SELECT mealTypeId, mealTypeName, published " +
                     "FROM MealTypes " +
                         "WHERE mealTypeId IN (" +
                         "SELECT mealTypeId FROM Menus " +
@@ -231,7 +159,7 @@ public class MenuRepository implements IMenuRepository{
     public Collection<Recipe> getRecipesFor(int id){
         Collection<Recipe> recipes;
         String sql =
-                "SELECT recipeId, recipeName, recipeDescription, recipeImageFilePath FROM Recipes " +
+                "SELECT recipeId, recipeName, recipeDescription, recipeImageFilePath, published FROM Recipes " +
                         "WHERE recipeId IN (" +
                             "SELECT recipeId FROM MenuRecipes " +
                             "WHERE menuId = :id" +
@@ -255,7 +183,7 @@ public class MenuRepository implements IMenuRepository{
         Collection<Ingredient> ingredients;
 
         String sql =
-                "SELECT ingredientId, ingredientName, ingredientDescription " +
+                "SELECT ingredientId, ingredientName, ingredientDescription, published " +
                     "FROM Ingredients " +
                     "WHERE ingredientId IN (" +
                         "SELECT ingredientId FROM MeasuredIngredients " +
@@ -302,7 +230,7 @@ public class MenuRepository implements IMenuRepository{
     private RecipeType getRecipeType(int recipeId){
         RecipeType recipeType;
         String sql =
-                "SELECT recipeTypeId, recipeTypeName " +
+                "SELECT recipeTypeId, recipeTypeName, published " +
                     "FROM RecipeTypes " +
                         "WHERE recipeTypeId IN (" +
                         "SELECT recipeTypeId FROM Recipes " +
@@ -320,24 +248,6 @@ public class MenuRepository implements IMenuRepository{
         }
 
         return recipeType;
-    }
-
-    public boolean isRelationValid(int relationId){
-        int id;
-        String sql =
-                "SELECT recipeId FROM Recipes " +
-                        "WHERE recipeId = :id";
-        try{
-            Connection con = sql2o.open();
-            id = con.createQuery(sql)
-                    .addParameter("id",relationId)
-                    .executeAndFetchFirst(Integer.class);
-            if (id > 0) return true;
-            return false;
-        }catch (Exception e)
-        {
-            return false;
-        }
     }
 
 }

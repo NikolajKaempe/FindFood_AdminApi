@@ -9,7 +9,7 @@ import org.sql2o.Sql2o;
 import repositories.AllergyRepository;
 
 public class AllergyRepositoryTest {
-
+/*
     public final static String DB_URL = "jdbc:mysql://80.255.6.114:3306/AirshipOneTesting";
     public final static String DB_USER = "AirshipOneUser";
     public final static String DB_PASS = "123456";

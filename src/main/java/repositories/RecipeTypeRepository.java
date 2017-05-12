@@ -7,6 +7,7 @@ import repositories.repositoryInterfaces.IRecipeTypeRepository;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 
 /**
  * Created by Kaempe on 17-03-2017.
@@ -24,7 +25,7 @@ public class RecipeTypeRepository implements IRecipeTypeRepository{
     public Collection<RecipeType> getAll() {
         Collection<RecipeType> recipeTypes;
         String sql =
-                "SELECT recipeTypeId, recipeTypeName " +
+                "SELECT recipeTypeId, recipeTypeName, published " +
                     "FROM RecipeTypes ";
         try{
             Connection con = sql2o.open();
@@ -46,7 +47,7 @@ public class RecipeTypeRepository implements IRecipeTypeRepository{
 
         RecipeType recipeType;
         String sql =
-                "SELECT recipeTypeId, recipeTypeName " +
+                "SELECT recipeTypeId, recipeTypeName, published " +
                     "FROM RecipeTypes " +
                     "WHERE recipeTypeId = :id";
         try{
@@ -66,12 +67,14 @@ public class RecipeTypeRepository implements IRecipeTypeRepository{
     public int create(RecipeType model) {
         int id;
         failIfInvalid(model);
+        Date date = new Date();
         String sql =
-                "INSERT INTO RecipeTypes (recipeTypeName) " +
-                        "VALUES (:recipeTypeName)";
+                "INSERT INTO RecipeTypes (recipeTypeName, published, createdDate) " +
+                        "VALUES (:recipeTypeName, :published, :date)";
         try{
             Connection con = sql2o.open();
             id = Integer.parseInt(con.createQuery(sql, true)
+                    .addParameter("date",date.getTime())
                     .bind(model)
                     .executeUpdate().getKey().toString());
         }catch (Exception e)
@@ -158,6 +161,47 @@ public class RecipeTypeRepository implements IRecipeTypeRepository{
         }
         if (recipeType.getRecipeTypeName() == null || recipeType.getRecipeTypeName().length() < 1) {
             throw new IllegalArgumentException("Parameter `name` cannot be empty");
+        }
+    }
+
+    @Override
+    public boolean isPublished(int id) {
+        Integer result;
+        String sql = "SELECT recipeTypeId " +
+                "FROM RecipeTypes " +
+                "WHERE published = 1 " +
+                "AND recipeTypeId = :id";
+        try{
+            Connection con = sql2o.open();
+            result = con.createQuery(sql)
+                    .addParameter("id",id)
+                    .executeAndFetchFirst(Integer.class);
+            if (result != 0) return true;
+            return false;
+        }catch (Exception e)
+        {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean publish(int id) {
+        Date date = new Date();
+        String sql =
+                "UPDATE RecipeTypes SET " +
+                        "published = 1, " +
+                        "createdDate = :date " +
+                        "WHERE recipeTypeId = :recipeTypeId";
+        try{
+            Connection con = sql2o.open();
+            con.createQuery(sql)
+                    .addParameter("date",date.getTime())
+                    .addParameter("recipeTypeId",id)
+                    .executeUpdate();
+            return true;
+        }catch (Exception e)
+        {
+            return false;
         }
     }
 

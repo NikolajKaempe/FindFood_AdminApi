@@ -7,6 +7,7 @@ public class RecipeType
 {
     private int recipeTypeId;
     private String recipeTypeName;
+    private boolean published;
 
     public RecipeType(){
     }
@@ -36,5 +37,13 @@ public class RecipeType
 
     public void setRecipeTypeName(String recipeTypeName) {
         this.recipeTypeName = recipeTypeName;
+    }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public void setPublished(boolean published) {
+        this.published = published;
     }
 }

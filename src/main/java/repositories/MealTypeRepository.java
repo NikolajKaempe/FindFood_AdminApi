@@ -7,6 +7,7 @@ import repositories.repositoryInterfaces.IMealTypeRepository;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 
 /**
  * Created by Kaempe on 17-03-2017.
@@ -21,7 +22,7 @@ public class MealTypeRepository implements IMealTypeRepository
     public Collection<MealType> getAll() {
         Collection<MealType> mealTypes;
         String sql =
-                "SELECT mealTypeId, mealTypeName " +
+                "SELECT mealTypeId, mealTypeName, published " +
                     "FROM MealTypes ";
         try{
             Connection con = sql2o.open();
@@ -42,7 +43,7 @@ public class MealTypeRepository implements IMealTypeRepository
         }
 
         MealType mealType;
-        String sql = "SELECT mealTypeId, mealTypeName " +
+        String sql = "SELECT mealTypeId, mealTypeName, published " +
                 "FROM MealTypes " +
                 "WHERE mealTypeId = :id";
         try{
@@ -62,12 +63,14 @@ public class MealTypeRepository implements IMealTypeRepository
     public int create(MealType model) {
         int id;
         failIfInvalid(model);
+        Date date = new Date();
         String sql =
-                "INSERT INTO MealTypes (mealTypeName) " +
-                        "VALUES (:mealTypeName)";
+                "INSERT INTO MealTypes (mealTypeName, published, createdDate) " +
+                        "VALUES (:mealTypeName, :published, :date)";
         try{
             Connection con = sql2o.open();
             id = Integer.parseInt(con.createQuery(sql, true)
+                    .addParameter("date",date.getTime())
                     .bind(model)
                     .executeUpdate().getKey().toString());
         }catch (Exception e)
@@ -84,13 +87,16 @@ public class MealTypeRepository implements IMealTypeRepository
             throw new IllegalArgumentException("No MealType found with id " + model.getMealTypeId());
         }
         failIfInvalid(model);
+        Date date = new Date();
         String sql =
                 "UPDATE MealTypes SET " +
-                        "mealTypeName = :mealTypeName " +
+                        "mealTypeName = :mealTypeName, " +
+                        "createdDate = :date" +
                         "WHERE mealTypeId = :mealTypeId";
         try{
             Connection con = sql2o.open();
             con.createQuery(sql)
+                    .addParameter("date",date.getTime())
                     .bind(model)
                     .executeUpdate();
             return true;
@@ -156,6 +162,47 @@ public class MealTypeRepository implements IMealTypeRepository
         }
         if (mealType.getMealTypeName() == null || mealType.getMealTypeName().length() < 1) {
             throw new IllegalArgumentException("Parameter `name` cannot be empty");
+        }
+    }
+
+    @Override
+    public boolean isPublished(int id) {
+        Integer result;
+        String sql = "SELECT mealTypeId " +
+                "FROM MealTypes " +
+                "WHERE published = 1 " +
+                "AND mealTypeId = :id";
+        try{
+            Connection con = sql2o.open();
+            result = con.createQuery(sql)
+                    .addParameter("id",id)
+                    .executeAndFetchFirst(Integer.class);
+            if (result != 0) return true;
+            return false;
+        }catch (Exception e)
+        {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean publish(int id) {
+        Date date = new Date();
+        String sql =
+                "UPDATE MealTypes SET " +
+                        "published = 1, " +
+                        "createdDate = :date " +
+                        "WHERE mealTypeId = :mealTypeId";
+        try{
+            Connection con = sql2o.open();
+            con.createQuery(sql)
+                    .addParameter("date",date.getTime())
+                    .addParameter("mealTypeId",id)
+                    .executeUpdate();
+            return true;
+        }catch (Exception e)
+        {
+            return false;
         }
     }
 

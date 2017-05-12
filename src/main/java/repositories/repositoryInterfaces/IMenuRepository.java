@@ -13,5 +13,4 @@ public interface IMenuRepository extends IRepository<Menu>
     Collection<Recipe> getRecipesFor(int id);
     Collection<Ingredient> getIngredientFor(int id);
     Collection<Allergy> getAllergiesFor(int id);
-    boolean isRelationValid(int id);
 }

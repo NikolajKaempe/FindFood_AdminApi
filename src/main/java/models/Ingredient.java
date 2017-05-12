@@ -13,10 +13,9 @@ public class Ingredient
     private String ingredientName;
     private String ingredientDescription;
     private Collection<Allergy> allergies;
+    private boolean published;
 
-    public Ingredient(){
-        this.allergies = new ArrayList<>();
-    }
+    public Ingredient(){ }
 
     public Ingredient(String name, String description){
         this(0,name,description);
@@ -26,7 +25,6 @@ public class Ingredient
         this.ingredientId = id;
         this.ingredientName = name;
         this.ingredientDescription = description;
-        this.allergies = new ArrayList<>();
     }
 
     public int getIngredientId() {
@@ -59,5 +57,13 @@ public class Ingredient
 
     public void setAllergies(Collection<Allergy> allergies) {
         this.allergies = allergies;
+    }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public void setPublished(boolean published) {
+        this.published = published;
     }
 }

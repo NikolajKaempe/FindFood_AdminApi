@@ -63,6 +63,7 @@ public class MealTypeController
 
             if (id != 0)
             {
+                // TODO ADD MESSAGE
                 res.status(200);
                 return id;
             }
@@ -92,6 +93,37 @@ public class MealTypeController
             return new String("mealtype not updated");
         }, json());
 
+        put("/mealTypes/accept/:id", (req, res) -> {
+            int id ;
+            try{
+                id = Integer.parseInt(req.params(":id"));
+            }catch (Exception e)
+            {
+                res.status(400);
+                return new String("the id must be an integer");
+            }
+            if (!mealTypeRepository.exists(id))
+            {
+                return new String("no mealTypes with id " + id + " found");
+            }
+            if (mealTypeRepository.isPublished(id))
+            {
+                return new String("mealType with id " + id + " already published");
+            }
+
+            boolean result = mealTypeRepository.publish(id);
+
+            if (result)
+            {
+                // TODO ADD MESSAGE
+                res.status(200);
+                return new String("mealTypes " + id + " published");
+            }
+
+            res.status(400);
+            return new String("mealTypes not published");
+        }, json());
+
         delete("/mealTypes/:id", (req, res) -> {
             int id ;
             try{
@@ -110,18 +142,5 @@ public class MealTypeController
             res.status(500);
             return new String("Could not delete mealType with id " + id);
         },json());
-
-        before((req,res) -> {
-            //TODO GET VERIFICATION FOR ADMIN/PUBLISHER
-            res.header("MyVal", "Hello World"); // Dummy -> REMOVE
-        });
-
-        after((req, res) -> res.type("application/json"));
-
-        exception(IllegalArgumentException.class, (e, req, res) -> {
-            res.status(400);
-            res.body(toJson(e.getMessage()));
-            res.type("application/json");
-        });
     }
 }

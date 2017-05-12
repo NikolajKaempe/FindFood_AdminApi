@@ -7,5 +7,8 @@ import models.MealType;
  */
 public interface IMealTypeRepository extends IRepository<MealType>
 {
+    int create(MealType model);
+    boolean update(MealType model);
+    void failIfInvalid(MealType model);
     void failDeleteIfRelationsExist(int id);
 }

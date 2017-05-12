@@ -61,6 +61,7 @@ public class RecipeTypeController
 
             if (id != 0)
             {
+                // TODO ADD MESSAGE
                 res.status(200);
                 return id;
             }
@@ -90,6 +91,37 @@ public class RecipeTypeController
             return new String("recipeType not updated");
         }, json());
 
+        put("/recipeTypes/accept/:id", (req, res) -> {
+            int id ;
+            try{
+                id = Integer.parseInt(req.params(":id"));
+            }catch (Exception e)
+            {
+                res.status(400);
+                return new String("the id must be an integer");
+            }
+            if (!recipeTypeRepository.exists(id))
+            {
+                return new String("no recipeType with id " + id + " found");
+            }
+            if (recipeTypeRepository.isPublished(id))
+            {
+                return new String("recipeType with id " + id + " already published");
+            }
+
+            boolean result = recipeTypeRepository.publish(id);
+
+            if (result)
+            {
+                // TODO ADD MESSAGE
+                res.status(200);
+                return new String("recipeType " + id + " published");
+            }
+
+            res.status(400);
+            return new String("recipeType not published");
+        }, json());
+
         delete("/recipeTypes/:id", (req, res) -> {
             int id ;
             try{
@@ -108,18 +140,5 @@ public class RecipeTypeController
             res.status(500);
             return new String("Could not delete recipeType with id " + id);
         },json());
-
-        before((req,res) -> {
-            //TODO GET VERIFICATION FOR ADMIN/PUBLISHER
-            res.header("MyVal", "Hello World"); // Dummy -> REMOVE
-        });
-
-        after((req, res) -> res.type("application/json"));
-
-        exception(IllegalArgumentException.class, (e, req, res) -> {
-            res.status(400);
-            res.body(toJson(e.getMessage()));
-            res.type("application/json");
-        });
     }
 }
